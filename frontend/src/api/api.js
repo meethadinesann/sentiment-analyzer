@@ -2,7 +2,7 @@ import axios from "axios";
 
 // Base URL of our Flask backend
 // All API calls will start with this
-const BASE_URL = "http://127.0.0.1:5000";
+const BASE_URL = "https://sentiment-analyzer-asdz.onrender.com";
 
 // Fetch all reviews for a product
 export const getReviews = async (productName) => {
