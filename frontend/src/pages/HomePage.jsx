@@ -1,3 +1,4 @@
+import { getReviews, getSentiment, scrapeProduct, checkScrapeStatus } from "../api/api";
 import { useState } from "react";
 import SearchBar from "../components/SearchBar";
 import ReviewCard from "../components/ReviewCard";
@@ -20,49 +21,73 @@ function HomePage() {
   const [searchHistory, setSearchHistory] = useState([]);
   const [currentPage, setCurrentPage] = useState(1);
 
-  const handleSearch = async (productName) => {
-    setLoading(true);
-    setError("");
-    setReviews([]);
-    setSentiment(null);
-    setCurrentPage(1);
-    setSearchedProduct(productName);
+const handleSearch = async (productName) => {
+  setLoading(true);
+  setError("");
+  setReviews([]);
+  setSentiment(null);
+  setCurrentPage(1);
+  setSearchedProduct(productName);
 
-    // Add to search history (avoid duplicates, max 5)
-    setSearchHistory((prev) => {
-      const filtered = prev.filter((item) => item !== productName);
-      return [productName, ...filtered].slice(0, 5);
-    });
+  setSearchHistory((prev) => {
+    const filtered = prev.filter((item) => item !== productName);
+    return [productName, ...filtered].slice(0, 5);
+  });
 
+  try {
+    // Try to get existing data first
+    const [reviewData, sentimentData] = await Promise.all([
+      getReviews(productName),
+      getSentiment(productName),
+    ]);
+    setReviews(reviewData.reviews);
+    setSentiment(sentimentData);
+    setLoading(false);
+
+  } catch (err) {
+    // Not in database — start scraping
     try {
-      const [reviewData, sentimentData] = await Promise.all([
-        getReviews(productName),
-        getSentiment(productName),
-      ]);
-      setReviews(reviewData.reviews);
-      setSentiment(sentimentData);
-    } catch (err) {
-      try {
-        setError(
-          "Product not found in database. Scraping now... this may take 2-3 minutes."
-        );
-        await scrapeProduct(productName);
-        const [reviewData, sentimentData] = await Promise.all([
-          getReviews(productName),
-          getSentiment(productName),
-        ]);
-        setError("");
-        setReviews(reviewData.reviews);
-        setSentiment(sentimentData);
-      } catch (scrapeErr) {
-        setError(
-          "Could not scrape this product. Please try a different search term."
-        );
-      }
-    } finally {
+      setError("Product not found. Scraping in background... please wait.");
+      await scrapeProduct(productName);
+
+      // Poll every 10 seconds until done
+      const pollInterval = setInterval(async () => {
+        try {
+          const statusData = await checkScrapeStatus(productName);
+
+          if (statusData.status === "done") {
+            clearInterval(pollInterval);
+
+            const [reviewData, sentimentData] = await Promise.all([
+              getReviews(productName),
+              getSentiment(productName),
+            ]);
+
+            setError("");
+            setReviews(reviewData.reviews);
+            setSentiment(sentimentData);
+            setLoading(false);
+
+          } else if (statusData.status === "error") {
+            clearInterval(pollInterval);
+            setError("Could not scrape this product. Please try again.");
+            setLoading(false);
+          } else {
+            setError("Still scraping... please wait.");
+          }
+        } catch (pollErr) {
+          clearInterval(pollInterval);
+          setError("Something went wrong. Please try again.");
+          setLoading(false);
+        }
+      }, 10000); // Check every 10 seconds
+
+    } catch (scrapeErr) {
+      setError("Could not start scraping. Please try again.");
       setLoading(false);
     }
-  };
+  }
+};
 
   // Pagination logic
     const totalPages = Math.ceil(reviews.length / REVIEWS_PER_PAGE);
