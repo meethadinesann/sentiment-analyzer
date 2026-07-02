@@ -1,7 +1,6 @@
-# Start from a Python image that has Chrome support
 FROM python:3.11-slim
 
-# Install Chrome and its dependencies
+# Install Chrome and dependencies
 RUN apt-get update && apt-get install -y \
     wget \
     gnupg \
@@ -16,23 +15,26 @@ ENV CHROME_BIN=/usr/bin/chromium
 ENV CHROMEDRIVER_PATH=/usr/bin/chromedriver
 ENV PYTHONUNBUFFERED=1
 
-# Set working directory inside container
+# Set working directory
 WORKDIR /app
 
-# Copy requirements first (for faster rebuilds)
-COPY requirements.txt .
+# Copy backend requirements first
+COPY backend/requirements.txt .
 
 # Install Python dependencies
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of the backend code
-COPY . .
+# Copy backend code
+COPY backend/ ./backend/
 
-# Copy the scraper folder too (backend depends on it)
-COPY ../scraper ./scraper
+# Copy scraper code (backend depends on it)
+COPY scraper/ ./scraper/
 
-# Expose port 5000
+# Set working directory to backend
+WORKDIR /app/backend
+
+# Expose port
 EXPOSE 5000
 
-# Start the Flask app
+# Start Flask
 CMD ["python", "app.py"]

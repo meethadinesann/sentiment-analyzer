@@ -1,9 +1,10 @@
 import sys
 import os
 
-# Add the scraper folder to Python's path
+# Add scraper to path - works both locally and in Docker
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../scraper"))
 sys.path.append(os.path.join(os.path.dirname(__file__), "../scraper"))
+sys.path.append("/app/scraper")  # ← Docker path
 
 from scrape_reviews import (
     create_driver,
