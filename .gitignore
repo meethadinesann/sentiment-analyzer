@@ -1,0 +1,28 @@
+# Virtual environments
+scraper/venv/
+backend/venv/
+
+# Environment variables (contains passwords - never push these!)
+.env
+backend/.env
+scraper/.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+
+# Data files
+scraper/data/
+
+# Node modules
+frontend/node_modules/
+
+# Vite build output
+frontend/dist/
+
+# Mac system files
+.DS_Store
+
+# NLTK data
+nltk_data/
