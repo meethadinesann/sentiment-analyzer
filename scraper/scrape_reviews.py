@@ -7,7 +7,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from webdriver_manager.chrome import ChromeDriverManager
 import time
 import pandas as pd
-
+import os          # ← THIS must be in scrape_reviews.py not scraper_service.py
 
 def create_driver():
     """
