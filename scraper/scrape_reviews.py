@@ -12,27 +12,39 @@ import pandas as pd
 def create_driver():
     """
     Sets up and returns a Selenium Chrome driver.
+    Automatically detects whether running locally or in Docker/Render.
     """
     options = webdriver.ChromeOptions()
-    options.add_argument("--headless=new")        
-    options.add_argument("--no-sandbox")          
+    options.add_argument("--headless=new")
+    options.add_argument("--no-sandbox")
+    options.add_argument("--disable-dev-shm-usage")
+    options.add_argument("--disable-gpu")
     options.add_argument("--start-maximized")
     options.add_argument("--disable-blink-features=AutomationControlled")
-    options.add_argument("--disable-dev-shm-usage") # ← ADD THIS: prevents memory issues
     options.add_experimental_option("excludeSwitches", ["enable-automation"])
     options.add_experimental_option("useAutomationExtension", False)
 
-    driver = webdriver.Chrome(
-        service=Service(ChromeDriverManager().install()),
-        options=options
-    )
+    # Check if running in Docker/Render (Chrome installed at fixed path)
+    chrome_bin = os.environ.get("CHROME_BIN")
+    chromedriver_path = os.environ.get("CHROMEDRIVER_PATH")
+
+    if chrome_bin and chromedriver_path:
+        # Running in Docker/Render
+        print("Using system Chrome (Docker/Render environment)")
+        options.binary_location = chrome_bin
+        service = Service(chromedriver_path)
+    else:
+        # Running locally on Mac
+        print("Using ChromeDriver Manager (local environment)")
+        service = Service(ChromeDriverManager().install())
+
+    driver = webdriver.Chrome(service=service, options=options)
 
     driver.execute_script(
         "Object.defineProperty(navigator, 'webdriver', {get: () => undefined})"
     )
 
     return driver
-
 
 def search_product(driver, product_name):
     """

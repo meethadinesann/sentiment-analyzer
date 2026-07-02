@@ -1,8 +1,9 @@
 import sys
 import os
 
-# Add the scraper folder to Python's path so we can import from it
+# Add the scraper folder to Python's path
 sys.path.append(os.path.join(os.path.dirname(__file__), "../../scraper"))
+sys.path.append(os.path.join(os.path.dirname(__file__), "../scraper"))
 
 from scrape_reviews import (
     create_driver,
